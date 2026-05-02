@@ -1,3 +1,5 @@
+Imports Microsoft.VisualBasic
+
 Class Application
 
     Private Sub Application_Startup(sender As Object, e As StartupEventArgs) Handles Me.Startup

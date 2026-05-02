@@ -196,6 +196,54 @@ Public Module ModBase
         Return [Enum].GetName(EnumData.GetType, EnumData)
     End Function
 
+    Private Function GetDPI() As Double
+        Try
+            Return PresentationSource.FromVisual(Application.Current.MainWindow)?.CompositionTarget?.TransformFromDevice.M11 * 96
+        Catch
+        End Try
+        Return 96
+    End Function
+
+    Public Function Lerp(ValueA As Double, ValueB As Double, Percent As Double) As Double
+        Return ValueA + (ValueB - ValueA) * Percent
+    End Function
+
+    Private ReadOnly UiThreadId As Integer = Thread.CurrentThread.ManagedThreadId
+    Public Function RunInUi() As Boolean
+        Return Thread.CurrentThread.ManagedThreadId = UiThreadId
+    End Function
+
+    Public Sub RunInUi(Action As Action)
+        If RunInUi() Then
+            Action()
+        Else
+            Application.Current.Dispatcher.InvokeAsync(Action)
+        End If
+    End Sub
+
+    Public Sub RunInUiWait(Action As Action)
+        If RunInUi() Then
+            Action()
+        Else
+            Application.Current.Dispatcher.Invoke(Action)
+        End If
+    End Sub
+
+    Public Function RunInNewThread(Action As Action, Optional Name As String = Nothing, Optional Priority As ThreadPriority = ThreadPriority.Normal) As Thread
+        Dim th As New Thread(
+        Sub()
+            Try
+                Action()
+            Catch ex As ThreadInterruptedException
+                Log(Name & ": thread aborted")
+            Catch ex As Exception
+                Log(ex, Name & ": thread execution failed")
+            End Try
+        End Sub) With {.Name = If(Name, "Runtime New Invoke " & GetUuid() & "#"), .Priority = Priority}
+        th.Start()
+        Return th
+    End Function
+
     Public Sub RunInUi(action As Action, Optional delay As Boolean = False)
         If delay Then
             Dim t As New Thread(Sub()
