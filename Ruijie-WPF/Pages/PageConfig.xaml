@@ -1,0 +1,78 @@
+<Page
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:Ruijie"
+    x:Class="PageConfig"
+    Title="Config" Background="Transparent">
+    <local:MyScrollViewer Margin="8" Padding="0,0,4,0">
+        <StackPanel Margin="8,8,8,16">
+
+            <!-- 服务器 Section -->
+            <local:MyCard Title="服务器" Margin="0,0,0,8">
+                <StackPanel Margin="15,38,15,12">
+                    <TextBlock Text="服务器地址" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtServerUrl" Margin="0,0,0,8" />
+                    <TextBlock Text="登录路径" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtLoginPath" Margin="0,0,0,8" />
+                    <TextBlock Text="登出路径" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtLogoutPath" />
+                </StackPanel>
+            </local:MyCard>
+
+            <!-- Cookie Section -->
+            <local:MyCard Title="Cookie" Margin="0,0,0,8">
+                <StackPanel Margin="15,38,15,12">
+                    <TextBox x:Name="TxtCookie" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="5000" Height="60"
+                             VerticalContentAlignment="Top" />
+                </StackPanel>
+            </local:MyCard>
+
+            <!-- 登录参数 Section -->
+            <local:MyCard Title="登录参数" Margin="0,0,0,8">
+                <StackPanel Margin="15,38,15,12">
+                    <TextBlock Text="userId" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtUserId" Margin="0,0,0,8" />
+
+                    <TextBlock Text="password" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <PasswordBox x:Name="TxtPassword" Margin="0,0,0,8" />
+
+                    <TextBlock Text="service" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtService" Margin="0,0,0,8" />
+
+                    <TextBlock Text="queryString" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtQueryString" Margin="0,0,0,8" />
+
+                    <TextBlock Text="operatorPwd" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtOperatorPwd" Margin="0,0,0,8" />
+
+                    <TextBlock Text="operatorUserId" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtOperatorUserId" Margin="0,0,0,8" />
+
+                    <TextBlock Text="validcode" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtValidcode" Margin="0,0,0,8" />
+
+                    <TextBlock Text="passwordEncrypt" Foreground="{StaticResource ColorBrushGray2}" Margin="0,0,0,4" />
+                    <TextBox x:Name="TxtPasswordEncrypt" />
+                </StackPanel>
+            </local:MyCard>
+
+            <!-- 请求头 Section -->
+            <local:MyCard Title="请求头" Margin="0,0,0,8">
+                <StackPanel Margin="15,38,15,12">
+                    <StackPanel x:Name="PanHeaders" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <local:MyButton x:Name="BtnAddHeader" Text="添加请求头" ColorType="Highlight" Padding="10,4" Margin="0,0,8,0" />
+                        <local:MyButton x:Name="BtnRemoveHeader" Text="移除末尾" ColorType="Normal" Padding="10,4" />
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
+
+            <!-- 按钮 Section -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+                <local:MyButton x:Name="BtnSaveConfig" Text="保存配置" ColorType="Highlight" Padding="20,6" Margin="0,0,8,0" />
+                <local:MyButton x:Name="BtnReloadConfig" Text="重新加载" ColorType="Normal" Padding="20,6" />
+            </StackPanel>
+
+        </StackPanel>
+    </local:MyScrollViewer>
+</Page>
