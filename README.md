@@ -74,7 +74,7 @@
 
 ## 配置说明
 
-> 📺 视频教程：[校园网绕过认证连接，一年省下大几百校园卡费](https://www.bilibili.com/video/BV18WXEBPEYi/)
+> 📺 视频教程：[【Mac/Windows/Linux通用】如何使用一个小工具自动连接锐捷认证校园网 ](https://www.bilibili.com/video/BV1TZ4y167b6/?share_source=copy_web&vd_source=3902cdf7d0b1352b0acab183a8cc10b4)
 
 配置文件 `config.yml` 各字段含义：
 
