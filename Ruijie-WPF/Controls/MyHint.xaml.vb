@@ -53,20 +53,6 @@ Public Class MyHint
                 BtnClose.Foreground = New MyColor("#d86c00")
         End Select
     End Sub
-    <Obsolete("IsWarn 已过时。请换用 Theme 属性。")>
-    Public Property IsWarn As Boolean
-        Get
-            Return Theme = Themes.Red
-        End Get
-        Set(value As Boolean)
-            Theme = If(value, Themes.Red, Themes.Blue)
-        End Set
-    End Property
-    Public Shared ReadOnly IsWarnProperty As DependencyProperty =
-        DependencyProperty.Register("IsWarn", GetType(Boolean), GetType(MyHint), New PropertyMetadata(True,
-        Sub(d As MyHint, e As DependencyPropertyChangedEventArgs)
-            d.Theme = If(e.NewValue, Themes.Red, Themes.Blue)
-        End Sub))
 
     '文本
     Public ReadOnly Property Inlines As InlineCollection

@@ -244,16 +244,22 @@ Public Module ModBase
         Return th
     End Function
 
-    Public Sub RunInUi(action As Action, Optional delay As Boolean = False)
-        If delay Then
-            Dim t As New Thread(Sub()
-                                               Thread.Sleep(1)
-                                               RunInUi(action)
-                                           End Sub)
-            t.Start()
-        Else
-            RunInUi(action)
-        End If
+#End Region
+
+#Region "共享配置"
+
+    Public SharedCfg As Dictionary(Of String, Object)
+    Public SharedHeaders As Dictionary(Of String, String)
+
+    Public Sub InitSharedConfig()
+        Try
+            SharedCfg = ReadCfg(GuiMode:=True)
+            SharedHeaders = BuildHeaders(SharedCfg)
+        Catch ex As Exception
+            SharedCfg = GetDefaultConfig()
+            SharedHeaders = BuildHeaders(SharedCfg)
+            Log(ex, "预加载配置失败")
+        End Try
     End Sub
 
 #End Region
@@ -277,6 +283,42 @@ Public Module ModBase
             SyncLock LogLock
                 Debug.Write(AppendText)
             End SyncLock
+        Catch
+        End Try
+    End Sub
+
+    Public Sub DailyWrite(Msg As String)
+        Dim Today As String = Date.Now.ToString("yyyy-MM-dd")
+        Dim LogsDir As String = GetLogsDir()
+        Try
+            If Not Directory.Exists(LogsDir) Then Directory.CreateDirectory(LogsDir)
+        Catch ex As Exception
+            Return
+        End Try
+        Try
+            Dim LogFile As String = System.IO.Path.Combine(LogsDir, Today & ".txt")
+            File.AppendAllText(LogFile, Msg, Text.Encoding.UTF8)
+        Catch
+        End Try
+    End Sub
+
+    Public Sub CleanOldLogs(Optional KeepDays As Integer = 7)
+        Dim LogsDir As String = GetLogsDir()
+        If Not Directory.Exists(LogsDir) Then Return
+        Dim Cutoff As Date = Date.Now.AddDays(-KeepDays)
+        Try
+            For Each F In Directory.GetFiles(LogsDir)
+                Dim Stem As String = System.IO.Path.GetFileNameWithoutExtension(F)
+                Dim FileDate As Date
+                If Date.TryParseExact(Stem, "yyyy-MM-dd", Nothing, Globalization.DateTimeStyles.None, FileDate) Then
+                    If FileDate < Cutoff Then
+                        Try
+                            File.Delete(F)
+                        Catch
+                        End Try
+                    End If
+                End If
+            Next
         Catch
         End Try
     End Sub

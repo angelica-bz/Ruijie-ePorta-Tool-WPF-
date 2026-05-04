@@ -5,46 +5,6 @@ Imports Microsoft.VisualBasic
 
 Public Module ModMonitor
 
-#Region "日志写入"
-
-    Public Sub DailyWrite(Msg As String)
-        Dim Today As String = Date.Now.ToString("yyyy-MM-dd")
-        Dim LogsDir As String = GetLogsDir()
-        Try
-            If Not Directory.Exists(LogsDir) Then Directory.CreateDirectory(LogsDir)
-        Catch ex As Exception
-            Return
-        End Try
-        Try
-            Dim LogFile As String = Path.Combine(LogsDir, Today & ".txt")
-            File.AppendAllText(LogFile, Msg, Text.Encoding.UTF8)
-        Catch
-        End Try
-    End Sub
-
-    Public Sub CleanOldLogs(Optional KeepDays As Integer = 7)
-        Dim LogsDir As String = GetLogsDir()
-        If Not Directory.Exists(LogsDir) Then Return
-        Dim Cutoff As Date = Date.Now.AddDays(-KeepDays)
-        Try
-            For Each F In Directory.GetFiles(LogsDir)
-                Dim Stem As String = Path.GetFileNameWithoutExtension(F)
-                Dim FileDate As Date
-                If Date.TryParseExact(Stem, "yyyy-MM-dd", Nothing, Globalization.DateTimeStyles.None, FileDate) Then
-                    If FileDate < Cutoff Then
-                        Try
-                            File.Delete(F)
-                        Catch
-                        End Try
-                    End If
-                End If
-            Next
-        Catch
-        End Try
-    End Sub
-
-#End Region
-
 #Region "格式化工具"
 
     Public Function FormatDuration(Dur As TimeSpan) As String
@@ -79,6 +39,12 @@ Public Class NetworkMonitor
     Private _DisconnectSchoolReachable As Nullable(Of Boolean) = Nothing
     Private _Thread As Thread
 
+    Public ReadOnly Property IsCurrentlyConnected As Boolean
+        Get
+            Return _WasConnected.HasValue AndAlso _WasConnected.Value
+        End Get
+    End Property
+
     Public Sub New(Cfg As Dictionary(Of String, Object))
         _Cfg = Cfg
     End Sub
@@ -95,9 +61,6 @@ Public Class NetworkMonitor
 
     Public Sub [Stop]()
         _StopEvent.Set()
-        If _Thread IsNot Nothing AndAlso _Thread.IsAlive Then
-            _Thread.Join(3000)
-        End If
     End Sub
 
     Private Sub RunLoop()
@@ -107,7 +70,8 @@ Public Class NetworkMonitor
             Try
                 Dim IsConnected As Boolean = False
                 Try
-                    IsConnected = TestInternet(Timeout:=3)
+                    Dim CheckTimeout = Math.Max(1, Math.Min(3, GetReconnectInterval()))
+                    IsConnected = TestInternet(Timeout:=CheckTimeout)
                 Catch
                     IsConnected = False
                 End Try
@@ -138,7 +102,7 @@ Public Class NetworkMonitor
                     _DisconnectSchoolReachable = SchoolReachable
                     Dim OnlineDuration As String = If(_ConnectedSince.HasValue, FormatDuration(Now - _ConnectedSince.Value), "未知")
                     Dim Reason As String = If(SchoolReachable, "认证服务器可达,疑似认证丢失", "认证服务器不可达,疑似物理断网")
-                    WriteDisconnectLog("[" & Now.ToString("yyyy-MM-dd HH:mm:ss") & "] ⬇ 中断开始 | 已在线 " & OnlineDuration & " | " & Reason)
+                    WriteDisconnectLog("[" & Now.ToString("HH:mm:ss") & "] ⬇ 中断开始 | 已在线 " & OnlineDuration & " | " & Reason)
 
                     If GetAutoReconnect() Then
                         RaiseLog("[" & Ts & "] 尝试自动重连…")
@@ -146,8 +110,7 @@ Public Class NetworkMonitor
                         If Ok Then
                             Dim Dur As String = If(_DisconnectTime.HasValue, FormatDuration(DateTime.Now - _DisconnectTime.Value), "未知")
                             Dim SchoolNow = CheckSchool(ServerUrl)
-                            WriteDisconnectLog("[" & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") & "] ⬆ 中断结束(自动重连) | 持续 " & Dur & " | 认证服务器: " & If(SchoolNow, "可达", "不可达"))
-                            WriteDisconnectLog("---")
+                            WriteDisconnectLog("[" & DateTime.Now.ToString("HH:mm:ss") & "] ⬆ 中断结束(自动重连) | 持续 " & Dur & " | 认证服务器: " & If(SchoolNow, "可达", "不可达"))
                         End If
                     End If
 
@@ -159,14 +122,12 @@ Public Class NetworkMonitor
 
                     Dim Dur As String = If(_DisconnectTime.HasValue, FormatDuration(Now - _DisconnectTime.Value), "未知")
                     Dim SchoolNow = CheckSchool(ServerUrl)
-                    WriteDisconnectLog("[" & Now.ToString("yyyy-MM-dd HH:mm:ss") & "] ⬆ 中断结束(自行恢复) | 持续 " & Dur & " | 认证服务器: " & If(SchoolNow, "可达", "不可达"))
-                    WriteDisconnectLog("---")
+                    WriteDisconnectLog("[" & Now.ToString("HH:mm:ss") & "] ⬆ 中断结束(自行恢复) | 持续 " & Dur & " | 认证服务器: " & If(SchoolNow, "可达", "不可达"))
 
                 ElseIf _WasConnected.Value AndAlso IsConnected Then
                     If Not _ConnectedSince.HasValue Then _ConnectedSince = Now
                 End If
 
-                RaiseSchoolStatus(ServerUrl)
                 Dim Interval As Integer = Math.Max(1, GetReconnectInterval())
                 _StopEvent.WaitOne(Interval * 1000)
 
@@ -187,7 +148,7 @@ Public Class NetworkMonitor
         Catch ex As Exception
             Dim Ts As String = Now.ToString("HH:mm:ss")
             RaiseLog("[" & Ts & "] 自动重连异常: " & ex.Message)
-            WriteDisconnectLog("[" & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") & "]   自动重连: 异常 (" & ex.Message & ")")
+            WriteDisconnectLog("[" & DateTime.Now.ToString("HH:mm:ss") & "]   自动重连: 异常 (" & ex.Message & ")")
             Return False
         End Try
 
@@ -205,7 +166,7 @@ Public Class NetworkMonitor
                 Msg = Result("message").ToString()
             End If
             RaiseLog("[" & Ts2 & "] 自动重连失败: " & Msg)
-            WriteDisconnectLog("[" & Now2.ToString("yyyy-MM-dd HH:mm:ss") & "]   自动重连: 失败 (" & Msg & ")")
+            WriteDisconnectLog("[" & Now2.ToString("HH:mm:ss") & "]   自动重连: 失败 (" & Msg & ")")
             Return False
         End If
     End Function
@@ -222,7 +183,7 @@ Public Class NetworkMonitor
     Private Sub RaiseSchoolStatus(ServerUrl As String)
         Dim Reachable As Boolean = False
         Try
-            Reachable = TestInternet(ServerUrl, 2)
+            Reachable = TcpProbe(ServerUrl)
         Catch
         End Try
         RaiseEvent SchoolStatusChanged(Reachable)
@@ -230,45 +191,28 @@ Public Class NetworkMonitor
 
     Private Function CheckSchool(ServerUrl As String) As Boolean
         Try
-            Return TestInternet(ServerUrl, 2)
+            Return TcpProbe(ServerUrl)
         Catch
             Return False
         End Try
     End Function
 
     Private Sub WriteDisconnectLog(Msg As String)
-        DailyWrite(Msg)
+        DailyWrite(Msg & vbCrLf)
     End Sub
 
     Private Function GetServerUrl() As String
-        If _Cfg.ContainsKey("url") AndAlso TypeOf _Cfg("url") Is Dictionary(Of String, Object) Then
-            Dim Url = CType(_Cfg("url"), Dictionary(Of String, Object))
-            If Url.ContainsKey("server") Then Return Url("server").ToString()
-        End If
-        Return "http://127.0.0.1"
+        Dim Server As String = GetDictStr(GetUrlDict(_Cfg), ConfigKeys.Server)
+        If Server = "" Then Return "http://127.0.0.1"
+        Return Server
     End Function
 
     Private Function GetAutoReconnect() As Boolean
-        If _Cfg.ContainsKey("function") AndAlso TypeOf _Cfg("function") Is Dictionary(Of String, Object) Then
-            Dim FunctionCfg = CType(_Cfg("function"), Dictionary(Of String, Object))
-            If FunctionCfg.ContainsKey("auto_reconnect") Then
-                Dim Val = FunctionCfg("auto_reconnect")
-                If TypeOf Val Is Boolean Then Return CBool(Val)
-                Return Val.ToString().ToLower() = "true"
-            End If
-        End If
-        Return False
+        Return GetDictBool(GetFunctionDict(_Cfg), ConfigKeys.AutoReconnect, False)
     End Function
 
     Private Function GetReconnectInterval() As Integer
-        If _Cfg.ContainsKey("function") AndAlso TypeOf _Cfg("function") Is Dictionary(Of String, Object) Then
-            Dim FunctionCfg = CType(_Cfg("function"), Dictionary(Of String, Object))
-            If FunctionCfg.ContainsKey("reconnect_interval") Then
-                Dim Val As Integer
-                If Integer.TryParse(FunctionCfg("reconnect_interval").ToString(), Val) Then Return Val
-            End If
-        End If
-        Return 5
+        Return GetDictInt(GetFunctionDict(_Cfg), ConfigKeys.ReconnectInterval, 5)
     End Function
 
 End Class

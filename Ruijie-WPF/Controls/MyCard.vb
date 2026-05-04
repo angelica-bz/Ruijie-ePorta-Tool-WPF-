@@ -96,7 +96,7 @@ Public Class MyCard
             Height = SwapedHeight
             AniStop("MyCard Height " & Uuid)
             IsHeightAnimating = False
-            RunInUi(Sub() UseAnimation = RawUseAnimation, True)
+            RunInUi(Sub() Me.Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub() UseAnimation = RawUseAnimation))
         End If
     End Sub
     Public Sub StackInstall()
@@ -214,17 +214,6 @@ Public Class MyCard
         End Set
     End Property
     Private _IsSwapped As Boolean = False
-    <Obsolete("IsSwaped 存在拼写错误，请换用 IsSwapped 属性。")>
-    Public Property IsSwaped As Boolean
-        Get
-            Return GetValue(IsSwapedProperty)
-        End Get
-        Set(value As Boolean)
-            SetValue(IsSwapedProperty, value)
-        End Set
-    End Property
-    Public Shared ReadOnly IsSwapedProperty As DependencyProperty = DependencyProperty.Register("IsSwaped", GetType(Boolean), GetType(MyCard), New PropertyMetadata(False,
-    Sub(sender, e) If sender IsNot Nothing AndAlso TypeOf sender Is MyCard Then CType(sender, MyCard).IsSwapped = CType(e.NewValue, Boolean)))
 
     Public Property SwapLogoRight As Boolean = False
     Private IsSwapMouseDown As Boolean = False

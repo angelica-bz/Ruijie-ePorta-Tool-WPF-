@@ -40,7 +40,7 @@
                     <local:MyCheckBox x:Name="ChkAutoStart" Text="开机自启" Margin="0,0,0,8" />
                     <local:MyCheckBox x:Name="ChkAutoReconnect" Text="断线自动重连" Margin="0,0,0,8" />
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="重试间隔：" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="重试间隔（1-99 秒）：" VerticalAlignment="Center" Margin="0,0,8,0" />
                         <TextBox x:Name="TxtInterval" Width="60" Text="60" />
                         <local:MyButton x:Name="BtnApplyInterval" Text="应用" Padding="10,4" Margin="8,0,0,0" />
                     </StackPanel>

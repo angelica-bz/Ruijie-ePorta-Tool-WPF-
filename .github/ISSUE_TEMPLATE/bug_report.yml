@@ -1,0 +1,65 @@
+name: Bug 报告
+description: 提交问题报告帮助改进项目
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你花时间提交问题报告！请尽量提供以下信息。
+
+  - type: input
+    id: os
+    attributes:
+      label: 操作系统
+      placeholder: 例如 Windows 11 23H2
+    validations:
+      required: true
+
+  - type: input
+    id: dotnet
+    attributes:
+      label: .NET Framework 版本
+      placeholder: 例如 4.8
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 程序版本
+      placeholder: 例如 v2.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 清晰描述遇到的问题
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 详细列出操作步骤
+      placeholder: |
+        1. 打开程序
+        2. 点击「连接」
+        3. 观察到...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: 粘贴 `logs/` 目录下相关日志文件内容
+      render: text
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图
+      description: 如有截图请直接粘贴到此处

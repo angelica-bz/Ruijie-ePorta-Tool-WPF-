@@ -1,6 +1,10 @@
 Public Class MyScrollViewer
     Inherits ScrollViewer
 
+    Public Sub New()
+        Focusable = False
+    End Sub
+
     Public Property DeltaMult As Double = 1
 
     Private RealOffset As Double
@@ -32,9 +36,5 @@ Public Class MyScrollViewer
     Public ScrollBar As MyScrollBar
     Private Sub Load() Handles Me.Loaded
         ScrollBar = GetTemplateChild("PART_VerticalScrollBar")
-    End Sub
-
-    Private Sub MyScrollViewer_PreviewGotKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs) Handles Me.PreviewGotKeyboardFocus
-        '阻止获得焦点时自动滚动
     End Sub
 End Class

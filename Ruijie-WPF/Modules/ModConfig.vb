@@ -148,7 +148,7 @@ Public Module ModConfig
                     InQuote = True
                     QuoteChar = c
                 ElseIf c = "#"c Then
-                    Return Value.Substring(0, i).TrimEnd()
+                    Return Value.Substring(0, i).Trim()
                 End If
             End If
         Next
@@ -171,6 +171,7 @@ Public Module ModConfig
         If Lower = "true" Then Return True
         If Lower = "false" Then Return False
         If Lower = "null" OrElse Lower = "~" Then Return Nothing
+        If Value.Length > 1 AndAlso Value.StartsWith("0") AndAlso Not Value.Contains(".") Then Return Value
         Dim IntVal As Integer
         If Integer.TryParse(Value, IntVal) Then Return IntVal
         Dim DblVal As Double
@@ -195,13 +196,10 @@ Public Module ModConfig
         Dim AutoReconnectVal As String = "false"
         Dim ReconnectIntervalVal As String = "5"
 
-        Dim FunctionCfg As Dictionary(Of String, Object) = Nothing
-        If Cfg.ContainsKey("function") AndAlso TypeOf Cfg("function") Is Dictionary(Of String, Object) Then
-            FunctionCfg = CType(Cfg("function"), Dictionary(Of String, Object))
-        End If
+        Dim FunctionCfg = GetFunctionDict(Cfg)
         If FunctionCfg IsNot Nothing Then
-            If FunctionCfg.ContainsKey("auto_reconnect") Then AutoReconnectVal = FunctionCfg("auto_reconnect").ToString().ToLower()
-            If FunctionCfg.ContainsKey("reconnect_interval") Then ReconnectIntervalVal = FunctionCfg("reconnect_interval").ToString()
+            If FunctionCfg.ContainsKey(ConfigKeys.AutoReconnect) Then AutoReconnectVal = FunctionCfg(ConfigKeys.AutoReconnect).ToString().ToLower()
+            If FunctionCfg.ContainsKey(ConfigKeys.ReconnectInterval) Then ReconnectIntervalVal = FunctionCfg(ConfigKeys.ReconnectInterval).ToString()
         End If
 
         Dim HasAuto As Boolean = False
@@ -299,20 +297,20 @@ Public Module ModConfig
 
     Public Function GetDefaultConfig() As Dictionary(Of String, Object)
         Dim Cfg As New Dictionary(Of String, Object)
-        Cfg("main") = New Dictionary(Of String, Object) From {{"version", CurrentConfigVersion}}
-        Cfg("function") = New Dictionary(Of String, Object) From {
-            {"check_school_network", True},
-            {"disconnect_network", True},
-            {"auto_reconnect", False},
-            {"reconnect_interval", 5}
+        Cfg(ConfigKeys.Main) = New Dictionary(Of String, Object) From {{ConfigKeys.Version, CurrentConfigVersion}}
+        Cfg(ConfigKeys.FunctionSection) = New Dictionary(Of String, Object) From {
+            {ConfigKeys.CheckSchoolNetwork, True},
+            {ConfigKeys.DisconnectNetwork, True},
+            {ConfigKeys.AutoReconnect, False},
+            {ConfigKeys.ReconnectInterval, 5}
         }
-        Cfg("url") = New Dictionary(Of String, Object) From {
-            {"server", "http://127.0.0.1"},
-            {"login", "/eportal/InterFace.do?method=login"},
-            {"logout", "/eportal/InterFace.do?method=logout"}
+        Cfg(ConfigKeys.Url) = New Dictionary(Of String, Object) From {
+            {ConfigKeys.Server, "http://127.0.0.1"},
+            {ConfigKeys.Login, "/eportal/InterFace.do?method=login"},
+            {ConfigKeys.Logout, "/eportal/InterFace.do?method=logout"}
         }
-        Cfg("cookie") = ""
-        Cfg("login_data") = New Dictionary(Of String, Object) From {
+        Cfg(ConfigKeys.Cookie) = ""
+        Cfg(ConfigKeys.LoginData) = New Dictionary(Of String, Object) From {
             {"userId", "00000000000"},
             {"password", Nothing},
             {"service", Nothing},
@@ -322,18 +320,16 @@ Public Module ModConfig
             {"validcode", Nothing},
             {"passwordEncrypt", "true"}
         }
-        Cfg("logout_data") = New Dictionary(Of String, Object)
-        Cfg("headers") = New Dictionary(Of String, Object) From {{"Referer", ""}}
+        Cfg(ConfigKeys.LogoutData) = New Dictionary(Of String, Object)
+        Cfg(ConfigKeys.Headers) = New Dictionary(Of String, Object) From {{"Referer", ""}}
         Return Cfg
     End Function
 
     Public Sub ValidateConfig(Cfg As Dictionary(Of String, Object), GuiMode As Boolean)
         Dim ConfigVersion As Integer = 0
-        If Cfg.ContainsKey("main") AndAlso TypeOf Cfg("main") Is Dictionary(Of String, Object) Then
-            Dim Main = CType(Cfg("main"), Dictionary(Of String, Object))
-            If Main.ContainsKey("version") Then
-                Integer.TryParse(Main("version").ToString(), ConfigVersion)
-            End If
+        Dim Main = GetSubDict(Cfg, ConfigKeys.Main)
+        If Main IsNot Nothing AndAlso Main.ContainsKey(ConfigKeys.Version) Then
+            Integer.TryParse(Main(ConfigKeys.Version).ToString(), ConfigVersion)
         End If
 
         If ConfigVersion < CurrentConfigVersion Then
@@ -343,12 +339,9 @@ Public Module ModConfig
             Log("警告：配置文件版本过高，请更新本程序")
         End If
 
-        Dim LoginData As Dictionary(Of String, Object) = Nothing
-        If Cfg.ContainsKey("login_data") AndAlso TypeOf Cfg("login_data") Is Dictionary(Of String, Object) Then
-            LoginData = CType(Cfg("login_data"), Dictionary(Of String, Object))
-        End If
+        Dim LoginData = GetSubDict(Cfg, ConfigKeys.LoginData)
         If LoginData Is Nothing Then
-            Cfg("login_data") = New Dictionary(Of String, Object)
+            Cfg(ConfigKeys.LoginData) = New Dictionary(Of String, Object)
         ElseIf LoginData.ContainsKey("userId") Then
             Dim Uid = LoginData("userId")
             If Uid Is Nothing OrElse Uid.ToString() = "" OrElse Uid.ToString() = "00000000000" Then
@@ -358,43 +351,42 @@ Public Module ModConfig
     End Sub
 
     Public Sub NormalizeConfig(Cfg As Dictionary(Of String, Object))
-        If Cfg.ContainsKey("url") AndAlso TypeOf Cfg("url") Is Dictionary(Of String, Object) Then
-            Dim Url = CType(Cfg("url"), Dictionary(Of String, Object))
-            If Url.ContainsKey("server") AndAlso Url("server") IsNot Nothing Then
-                Dim Server As String = Url("server").ToString()
-                If Server.EndsWith("/") Then Url("server") = Server.TrimEnd("/"c)
+        Dim Url = GetUrlDict(Cfg)
+        If Url IsNot Nothing Then
+            If Url.ContainsKey(ConfigKeys.Server) AndAlso Url(ConfigKeys.Server) IsNot Nothing Then
+                Dim Server As String = Url(ConfigKeys.Server).ToString()
+                If Server.EndsWith("/") Then Url(ConfigKeys.Server) = Server.TrimEnd("/"c)
             End If
             ConvertToStrings(Url)
         End If
 
-        If Cfg.ContainsKey("login_data") AndAlso TypeOf Cfg("login_data") Is Dictionary(Of String, Object) Then
-            ConvertToStrings(CType(Cfg("login_data"), Dictionary(Of String, Object)))
-        End If
+        Dim LoginData = GetSubDict(Cfg, ConfigKeys.LoginData)
+        If LoginData IsNot Nothing Then ConvertToStrings(LoginData)
 
-        If Cfg.ContainsKey("logout_data") Then
-            If Cfg("logout_data") Is Nothing Then
-                Cfg("logout_data") = New Dictionary(Of String, Object)
-            ElseIf TypeOf Cfg("logout_data") Is Dictionary(Of String, Object) Then
-                ConvertToStrings(CType(Cfg("logout_data"), Dictionary(Of String, Object)))
+        If Cfg.ContainsKey(ConfigKeys.LogoutData) Then
+            If Cfg(ConfigKeys.LogoutData) Is Nothing Then
+                Cfg(ConfigKeys.LogoutData) = New Dictionary(Of String, Object)
+            ElseIf TypeOf Cfg(ConfigKeys.LogoutData) Is Dictionary(Of String, Object) Then
+                ConvertToStrings(CType(Cfg(ConfigKeys.LogoutData), Dictionary(Of String, Object)))
             End If
         Else
-            Cfg("logout_data") = New Dictionary(Of String, Object)
+            Cfg(ConfigKeys.LogoutData) = New Dictionary(Of String, Object)
         End If
 
-        If Cfg.ContainsKey("headers") Then
-            If Cfg("headers") Is Nothing Then
-                Cfg("headers") = New Dictionary(Of String, Object)
+        If Cfg.ContainsKey(ConfigKeys.Headers) Then
+            If Cfg(ConfigKeys.Headers) Is Nothing Then
+                Cfg(ConfigKeys.Headers) = New Dictionary(Of String, Object)
             End If
         Else
-            Cfg("headers") = New Dictionary(Of String, Object)
+            Cfg(ConfigKeys.Headers) = New Dictionary(Of String, Object)
         End If
 
-        If Not Cfg.ContainsKey("function") OrElse Cfg("function") Is Nothing Then
-            Cfg("function") = New Dictionary(Of String, Object)
+        If GetFunctionDict(Cfg) Is Nothing Then
+            Cfg(ConfigKeys.FunctionSection) = New Dictionary(Of String, Object)
         End If
-        Dim FunctionCfg = CType(Cfg("function"), Dictionary(Of String, Object))
-        If Not FunctionCfg.ContainsKey("auto_reconnect") Then FunctionCfg("auto_reconnect") = False
-        If Not FunctionCfg.ContainsKey("reconnect_interval") Then FunctionCfg("reconnect_interval") = 5
+        Dim FunctionCfg = CType(Cfg(ConfigKeys.FunctionSection), Dictionary(Of String, Object))
+        If Not FunctionCfg.ContainsKey(ConfigKeys.AutoReconnect) Then FunctionCfg(ConfigKeys.AutoReconnect) = False
+        If Not FunctionCfg.ContainsKey(ConfigKeys.ReconnectInterval) Then FunctionCfg(ConfigKeys.ReconnectInterval) = 5
     End Sub
 
     Private Sub ConvertToStrings(Target As Dictionary(Of String, Object))
@@ -412,6 +404,73 @@ Public Module ModConfig
             End If
         Next
     End Sub
+
+#End Region
+
+#Region "配置访问 Helpers"
+
+    Public Class ConfigKeys
+        Public Const Main As String = "main"
+        Public Const Version As String = "version"
+        Public Const FunctionSection As String = "function"
+        Public Const CheckSchoolNetwork As String = "check_school_network"
+        Public Const DisconnectNetwork As String = "disconnect_network"
+        Public Const AutoReconnect As String = "auto_reconnect"
+        Public Const ReconnectInterval As String = "reconnect_interval"
+        Public Const Url As String = "url"
+        Public Const Server As String = "server"
+        Public Const Login As String = "login"
+        Public Const Logout As String = "logout"
+        Public Const Cookie As String = "cookie"
+        Public Const LoginData As String = "login_data"
+        Public Const LogoutData As String = "logout_data"
+        Public Const Headers As String = "headers"
+    End Class
+
+    Public Function GetSubDict(Dict As Dictionary(Of String, Object), Key As String) As Dictionary(Of String, Object)
+        If Dict Is Nothing Then Return Nothing
+        If Dict.ContainsKey(Key) AndAlso TypeOf Dict(Key) Is Dictionary(Of String, Object) Then
+            Return CType(Dict(Key), Dictionary(Of String, Object))
+        End If
+        Return Nothing
+    End Function
+
+    Public Function GetDictStr(Dict As Dictionary(Of String, Object), Key As String, Optional DefaultValue As String = "") As String
+        If Dict Is Nothing Then Return DefaultValue
+        If Dict.ContainsKey(Key) AndAlso Dict(Key) IsNot Nothing Then
+            Return Dict(Key).ToString()
+        End If
+        Return DefaultValue
+    End Function
+
+    Public Function GetDictBool(Dict As Dictionary(Of String, Object), Key As String, Optional DefaultValue As Boolean = False) As Boolean
+        If Dict Is Nothing Then Return DefaultValue
+        If Dict.ContainsKey(Key) Then
+            Dim Val = Dict(Key)
+            If Val Is Nothing Then Return DefaultValue
+            If TypeOf Val Is Boolean Then Return CBool(Val)
+            Dim s = Val.ToString().ToLower()
+            Return s = "true"
+        End If
+        Return DefaultValue
+    End Function
+
+    Public Function GetDictInt(Dict As Dictionary(Of String, Object), Key As String, Optional DefaultValue As Integer = 0) As Integer
+        If Dict Is Nothing Then Return DefaultValue
+        If Dict.ContainsKey(Key) AndAlso Dict(Key) IsNot Nothing Then
+            Dim IntVal As Integer
+            If Integer.TryParse(Dict(Key).ToString(), IntVal) Then Return IntVal
+        End If
+        Return DefaultValue
+    End Function
+
+    Public Function GetUrlDict(Cfg As Dictionary(Of String, Object)) As Dictionary(Of String, Object)
+        Return GetSubDict(Cfg, ConfigKeys.Url)
+    End Function
+
+    Public Function GetFunctionDict(Cfg As Dictionary(Of String, Object)) As Dictionary(Of String, Object)
+        Return GetSubDict(Cfg, ConfigKeys.FunctionSection)
+    End Function
 
 #End Region
 

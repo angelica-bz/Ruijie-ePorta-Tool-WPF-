@@ -25,6 +25,19 @@ packages/
 logs/
 config.yml
 
+# ReSharper / Rider
+*.DotSettings.user
+
+# Merge & backup
+*.orig
+*.tmp
+*.bak
+[Tt]est[Rr]esult*/
+
+# Screenshots source files
+screenshots/*.psd
+screenshots/*.xcf
+
 # OS files
 Thumbs.db
 ehthumbs.db

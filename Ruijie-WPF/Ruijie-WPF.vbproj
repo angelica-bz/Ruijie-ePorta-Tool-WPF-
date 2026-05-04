@@ -49,6 +49,8 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -151,6 +153,7 @@
     <Compile Include="Modules\ModAnimation.vb" />
     <Compile Include="Modules\ModBase.vb" />
     <Compile Include="Modules\ModConfig.vb" />
+    <Compile Include="Modules\ModJson.vb" />
     <Compile Include="Modules\ModNetwork.vb" />
     <Compile Include="Modules\ModMonitor.vb" />
     <Compile Include="Modules\ModStartup.vb" />

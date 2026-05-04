@@ -332,15 +332,18 @@ Public Module ModAnimation
                 Log("[Animation] Animation thread started")
                 Do While True
                     Dim DeltaTime As Long = (GetTimeMs() - AniLastTick).Clamp(0, 100000)
-                    If DeltaTime < 3 Then GoTo Sleeper
+                    If DeltaTime < 3 Then
+                        Thread.Sleep(If(AniGroups.Count = 0, 16, 1))
+                        Continue Do
+                    End If
                     AniLastTick = GetTimeMs()
-                    RunInUiWait(
-                    Sub()
-                        AniCount = 0
-                        AniTimer(DeltaTime)
-                    End Sub)
-Sleeper:
-                    Thread.Sleep(1)
+                    If AniGroups.Count > 0 Then
+                        RunInUiWait(
+                        Sub()
+                            AniCount = 0
+                            AniTimer(DeltaTime)
+                        End Sub)
+                    End If
                 Loop
             Catch ex As Exception
                 Log(ex, "Animation frame failed")

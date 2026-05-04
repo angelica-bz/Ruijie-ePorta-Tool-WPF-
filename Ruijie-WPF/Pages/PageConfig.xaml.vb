@@ -7,27 +7,23 @@ Public Class PageConfig
     Private HeaderRows As New List(Of Tuple(Of TextBox, TextBox, StackPanel))
 
     Private Sub Page_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
-        Try
-            Cfg = ReadCfg(GuiMode:=True)
-        Catch ex As Exception
-            Cfg = GetDefaultConfig()
-        End Try
+        Cfg = SharedCfg
         PopulateFields()
     End Sub
 
 #Region "填充表单"
 
     Private Sub PopulateFields()
-        Dim UrlCfg = TryCast(Cfg("url"), Dictionary(Of String, Object))
+        Dim UrlCfg = GetUrlDict(Cfg)
         If UrlCfg IsNot Nothing Then
-            TxtServerUrl.Text = If(UrlCfg("server"), "").ToString()
-            TxtLoginPath.Text = If(UrlCfg("login"), "").ToString()
-            TxtLogoutPath.Text = If(UrlCfg("logout"), "").ToString()
+            TxtServerUrl.Text = GetDictStr(UrlCfg, ConfigKeys.Server)
+            TxtLoginPath.Text = GetDictStr(UrlCfg, ConfigKeys.Login)
+            TxtLogoutPath.Text = GetDictStr(UrlCfg, ConfigKeys.Logout)
         End If
 
-        TxtCookie.Text = If(Cfg("cookie"), "").ToString()
+        TxtCookie.Text = GetDictStr(Cfg, ConfigKeys.Cookie)
 
-        Dim LoginData = TryCast(Cfg("login_data"), Dictionary(Of String, Object))
+        Dim LoginData = GetSubDict(Cfg, ConfigKeys.LoginData)
         If LoginData IsNot Nothing Then
             TxtUserId.Text = GetLoginField(LoginData, "userId")
             TxtPassword.Password = GetLoginField(LoginData, "password")
@@ -55,7 +51,7 @@ Public Class PageConfig
         Next
         HeaderRows.Clear()
 
-        Dim HeadersCfg = TryCast(Cfg("headers"), Dictionary(Of String, Object))
+        Dim HeadersCfg = GetSubDict(Cfg, ConfigKeys.Headers)
         If HeadersCfg Is Nothing OrElse HeadersCfg.Count = 0 Then
             AddHeaderRow("Referer", "")
         Else
@@ -123,34 +119,35 @@ Public Class PageConfig
             If K <> "" Then HeadersDict(K) = V
         Next
 
-        Dim FunctionCfg = TryCast(Cfg("function"), Dictionary(Of String, Object))
+        Dim FunctionCfg = GetFunctionDict(Cfg)
         If FunctionCfg Is Nothing Then FunctionCfg = New Dictionary(Of String, Object)
         Dim autoReconnect As Boolean = False
-        Dim reconnectVal = FunctionCfg("auto_reconnect")
+        Dim reconnectVal = FunctionCfg(ConfigKeys.AutoReconnect)
         If reconnectVal IsNot Nothing Then Boolean.TryParse(reconnectVal.ToString(), autoReconnect)
-        FunctionCfg("auto_reconnect") = autoReconnect
+        FunctionCfg(ConfigKeys.AutoReconnect) = autoReconnect
         Dim Interval As Integer = 5
-        Integer.TryParse(If(FunctionCfg("reconnect_interval"), "5").ToString(), Interval)
-        FunctionCfg("reconnect_interval") = Interval
+        Integer.TryParse(If(FunctionCfg(ConfigKeys.ReconnectInterval), "5").ToString(), Interval)
+        FunctionCfg(ConfigKeys.ReconnectInterval) = Interval
 
         Dim NewCfg As New Dictionary(Of String, Object) From {
-            {"main", New Dictionary(Of String, Object) From {{"version", 3}}},
-            {"function", FunctionCfg},
-            {"url", New Dictionary(Of String, Object) From {
-                {"server", TxtServerUrl.Text.Trim()},
-                {"login", TxtLoginPath.Text.Trim()},
-                {"logout", TxtLogoutPath.Text.Trim()}
+            {ConfigKeys.Main, New Dictionary(Of String, Object) From {{ConfigKeys.Version, CurrentConfigVersion}}},
+            {ConfigKeys.FunctionSection, FunctionCfg},
+            {ConfigKeys.Url, New Dictionary(Of String, Object) From {
+                {ConfigKeys.Server, TxtServerUrl.Text.Trim()},
+                {ConfigKeys.Login, TxtLoginPath.Text.Trim()},
+                {ConfigKeys.Logout, TxtLogoutPath.Text.Trim()}
             }},
-            {"cookie", TxtCookie.Text.Trim()},
-            {"login_data", LoginData},
-            {"logout_data", New Dictionary(Of String, Object)},
-            {"headers", HeadersDict}
+            {ConfigKeys.Cookie, TxtCookie.Text.Trim()},
+            {ConfigKeys.LoginData, LoginData},
+            {ConfigKeys.LogoutData, New Dictionary(Of String, Object)},
+            {ConfigKeys.Headers, HeadersDict}
         }
 
         SaveConfig(NewCfg)
 
         Try
             Cfg = ReadCfg()
+            SharedCfg = Cfg
         Catch
         End Try
 
@@ -174,6 +171,7 @@ Public Class PageConfig
                            MessageBoxButton.YesNo, MessageBoxImage.Question) <> MessageBoxResult.Yes Then Return
         Try
             Cfg = ReadCfg()
+            SharedCfg = Cfg
         Catch
         End Try
         PopulateFields()
