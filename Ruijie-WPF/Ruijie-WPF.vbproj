@@ -157,6 +157,7 @@
     <Compile Include="Modules\ModNetwork.vb" />
     <Compile Include="Modules\ModMonitor.vb" />
     <Compile Include="Modules\ModStartup.vb" />
+    <Compile Include="Modules\VersionHelper.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
   </ItemGroup>
   <ItemGroup>

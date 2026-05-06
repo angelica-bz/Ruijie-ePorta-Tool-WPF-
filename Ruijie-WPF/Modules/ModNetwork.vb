@@ -34,10 +34,14 @@ Public Module ModNetwork
 
 #Region "请求头构建"
 
+    Private Function StripScheme(Url As String) As String
+        Return Url.Replace("http://", "").Replace("https://", "")
+    End Function
+
     Public Function BuildHeaders(Cfg As Dictionary(Of String, Object)) As Dictionary(Of String, String)
         Dim Server As String = GetDictStr(GetUrlDict(Cfg), ConfigKeys.Server)
 
-        Dim Hostname As String = Server.Replace("http://", "").Replace("https://", "")
+        Dim Hostname As String = StripScheme(Server)
 
         Dim Headers As New Dictionary(Of String, String)
         Headers("Connection") = "keep-alive"
@@ -178,7 +182,7 @@ Public Module ModNetwork
 
     Public Function TcpProbe(Url As String, Optional Timeout As Integer = 2) As Boolean
         Try
-            Dim Host As String = Url.Replace("http://", "").Replace("https://", "")
+            Dim Host As String = StripScheme(Url)
             Dim Port As Integer = 80
             Dim ColonIdx As Integer = Host.IndexOf(":"c)
             If ColonIdx > 0 Then

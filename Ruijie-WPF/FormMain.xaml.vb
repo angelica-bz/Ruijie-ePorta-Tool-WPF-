@@ -17,8 +17,7 @@ Public Class FormMain
     End Sub
 
     Private Sub FormMain_Loaded() Handles Me.Loaded
-        Dim ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version
-        LabVersion.Text = $"v{ver.Major}.{ver.Minor}"
+        LabVersion.Text = $"v{VersionHelper.GetAppVersion()}"
 
         If Application.IsBackgroundStart Then
             Hide()
@@ -136,7 +135,7 @@ Public Class FormMain
             TrayIcon.Dispose()
             TrayIcon = Nothing
         End If
-        Close()
+        Application.Current.Shutdown()
     End Sub
 
     Private Sub BtnTitleTray_Click(sender As Object, e As EventArgs)

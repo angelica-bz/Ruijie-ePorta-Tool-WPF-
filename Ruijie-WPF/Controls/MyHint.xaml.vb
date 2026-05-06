@@ -129,6 +129,6 @@ Partial Public Module ModAnimation
                 End If
                 If CallBack IsNot Nothing Then CallBack(Control)
             End Sub,, True)
-        }, "MyCard Dispose " & Control.Uuid)
+        }, "MyHint Dispose " & Control.Uuid)
     End Sub
 End Module
