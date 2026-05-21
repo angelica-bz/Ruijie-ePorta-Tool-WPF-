@@ -5,6 +5,12 @@ Class Application
     Public Shared IsBackgroundStart As Boolean = False
 
     Private Sub Application_Startup(sender As Object, e As StartupEventArgs) Handles Me.Startup
+        If e.Args.Contains("--test") Then
+            Me.ShutdownMode = ShutdownMode.OnExplicitShutdown
+            ModMonitorTests.RunAllTests()
+            Me.Shutdown()
+            Return
+        End If
         If e.Args.Contains("--background") Then
             IsBackgroundStart = True
         End If

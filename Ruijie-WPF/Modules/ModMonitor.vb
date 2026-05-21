@@ -1,3 +1,4 @@
+Imports System.Collections.Generic
 Imports System.IO
 Imports System.Threading
 Imports System.Windows
@@ -37,6 +38,9 @@ Public Class NetworkMonitor
     Private _ConnectedSince As Nullable(Of DateTime) = Nothing
     Private _DisconnectTime As Nullable(Of DateTime) = Nothing
     Private _DisconnectSchoolReachable As Nullable(Of Boolean) = Nothing
+    Private _SchoolReachable As Nullable(Of Boolean) = Nothing
+    Private ReadOnly _RecentLogs As New Queue(Of String)
+    Private ReadOnly _RecentLogsLock As New Object()
     Private _Thread As Thread
 
     Public ReadOnly Property IsCurrentlyConnected As Boolean
@@ -44,6 +48,16 @@ Public Class NetworkMonitor
             Return _WasConnected.HasValue AndAlso _WasConnected.Value
         End Get
     End Property
+
+    Public Function GetSnapshot() As (
+        Connected As Boolean,
+        SchoolReachable As Nullable(Of Boolean),
+        Logs As String()
+    )
+        SyncLock _RecentLogsLock
+            Return (_WasConnected.GetValueOrDefault(False), _SchoolReachable, _RecentLogs.ToArray())
+        End SyncLock
+    End Function
 
     Public Sub New(Cfg As Dictionary(Of String, Object))
         _Cfg = Cfg
@@ -174,6 +188,12 @@ Public Class NetworkMonitor
     Private Sub RaiseLog(Msg As String)
         RaiseEvent LogMessage(Msg)
         DailyWrite(Msg & vbCrLf)
+        SyncLock _RecentLogsLock
+            _RecentLogs.Enqueue(Msg)
+            While _RecentLogs.Count > 50
+                _RecentLogs.Dequeue()
+            End While
+        End SyncLock
     End Sub
 
     Private Sub RaiseStatus(Connected As Boolean)
@@ -186,6 +206,7 @@ Public Class NetworkMonitor
             Reachable = TcpProbe(ServerUrl)
         Catch
         End Try
+        _SchoolReachable = Reachable
         RaiseEvent SchoolStatusChanged(Reachable)
     End Sub
 

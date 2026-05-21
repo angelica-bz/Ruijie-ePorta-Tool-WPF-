@@ -44,12 +44,25 @@ Public Class PageStatus
             NotifiedConnection = MainWin.BgNotified
         End If
         If Monitor Is Nothing Then Return
-        UpdateStatus(Monitor.IsCurrentlyConnected)
-        If _MonitorHandlersAttached Then Return
-        _MonitorHandlersAttached = True
-        AddHandler Monitor.LogMessage, Sub(msg) RunInUi(Sub() AppendLog(msg, writeToFile:=False))
-        AddHandler Monitor.StatusChanged, Sub(connected) RunInUi(Sub() UpdateStatus(connected))
-        AddHandler Monitor.SchoolStatusChanged, Sub(reachable) RunInUi(Sub() UpdateSchoolStatus(reachable))
+
+        If Not _MonitorHandlersAttached Then
+            Dim Snap = Monitor.GetSnapshot()
+
+            UpdateStatus(Snap.Connected)
+
+            If Snap.SchoolReachable.HasValue Then
+                UpdateSchoolStatus(Snap.SchoolReachable.Value)
+            End If
+
+            For Each msg In Snap.Logs
+                AppendLog(msg, writeToFile:=False)
+            Next
+
+            _MonitorHandlersAttached = True
+            AddHandler Monitor.LogMessage, Sub(msg) RunInUi(Sub() AppendLog(msg, writeToFile:=False))
+            AddHandler Monitor.StatusChanged, Sub(connected) RunInUi(Sub() UpdateStatus(connected))
+            AddHandler Monitor.SchoolStatusChanged, Sub(reachable) RunInUi(Sub() UpdateSchoolStatus(reachable))
+        End If
     End Sub
 
     Private Sub StopMonitor()
