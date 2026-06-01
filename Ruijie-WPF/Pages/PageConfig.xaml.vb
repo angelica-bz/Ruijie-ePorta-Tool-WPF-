@@ -146,8 +146,8 @@ Public Class PageConfig
         SaveConfig(NewCfg)
 
         Try
-            Cfg = ReadCfg()
-            SharedCfg = Cfg
+            ReloadRuntimeConfig()
+            Cfg = SharedCfg
         Catch
         End Try
 
@@ -170,8 +170,8 @@ Public Class PageConfig
         If MessageBox.Show("放弃未保存的修改，从 config.yml 重新加载？", "重新加载",
                            MessageBoxButton.YesNo, MessageBoxImage.Question) <> MessageBoxResult.Yes Then Return
         Try
-            Cfg = ReadCfg()
-            SharedCfg = Cfg
+            ReloadRuntimeConfig()
+            Cfg = SharedCfg
         Catch
         End Try
         PopulateFields()

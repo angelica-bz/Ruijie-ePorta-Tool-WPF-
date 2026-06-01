@@ -115,20 +115,15 @@ End Class
 Partial Public Module ModAnimation
     Public Sub AniDispose(Control As MyHint, RemoveFromChildren As Boolean, Optional CallBack As ParameterizedThreadStart = Nothing)
         If Not Control.IsHitTestVisible Then Return
-        Control.IsHitTestVisible = False
-        AniStart({
-            AaScaleTransform(Control, -0.08, 200,, New AniEaseInFluent),
-            AaOpacity(Control, -1, 200,, New AniEaseOutFluent),
-            AaHeight(Control, -Control.ActualHeight, 150, 100, New AniEaseOutFluent),
-            AaCode(
+        AniDisposeCore(Control,
             Sub()
                 If RemoveFromChildren Then
-                    CType(Control.Parent, Object).Children.Remove(Control)
+                    RemoveFromParent(Control)
                 Else
                     Control.Visibility = Visibility.Collapsed
                 End If
                 If CallBack IsNot Nothing Then CallBack(Control)
-            End Sub,, True)
-        }, "MyHint Dispose " & Control.Uuid)
+            End Sub,
+            "MyHint Dispose")
     End Sub
 End Module

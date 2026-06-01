@@ -2,12 +2,14 @@ Imports System.Windows
 Imports System.Windows.Media
 Imports System.Threading
 Imports System.Runtime.CompilerServices
+Imports System.Collections.Concurrent
+Imports System.Linq
 
 Public Module ModAnimation
 
 #Region "声明"
 
-    Public AniGroups As New Dictionary(Of String, AniGroupEntry)
+    Public AniGroups As New ConcurrentDictionary(Of String, AniGroupEntry)
     Public AniSpeed As Double = 1
     Public Class AniGroupEntry
         Public Data As List(Of AniData)
@@ -285,6 +287,10 @@ Public Module ModAnimation
 
 #Region "接口（开始、中断、检测）"
 
+    ''' <summary>
+    ''' 添加一组动画并按 Name 注册。Name 相同时替换旧组。
+    ''' 可从任意线程调用（ConcurrentDictionary 保证容器安全）。
+    ''' </summary>
     Public Sub AniStart(AniGroup As IList, Optional Name As String = "", Optional RefreshTime As Boolean = False)
         If RefreshTime Then AniLastTick = GetTimeMs()
         Dim AllAnis = New List(Of AniData)
@@ -299,17 +305,22 @@ Public Module ModAnimation
         If Name = "" Then
             Name = NewEntry.Uuid.ToString()
         Else
-            AniStop(Name)
+            Dim Dummy As AniGroupEntry = Nothing
+            AniGroups.TryRemove(Name, Dummy)
         End If
-        AniGroups.Add(Name, NewEntry)
+        AniGroups(Name) = NewEntry
     End Sub
 
     Public Sub AniStart(AniGroup As AniData, Optional Name As String = "", Optional RefreshTime As Boolean = False)
         AniStart(New List(Of AniData) From {AniGroup}, Name, RefreshTime)
     End Sub
 
+    ''' <summary>
+    ''' 移除指定动画组。可从任意线程调用。
+    ''' </summary>
     Public Sub AniStop(Name As String)
-        AniGroups.Remove(Name)
+        Dim Dummy As AniGroupEntry = Nothing
+        AniGroups.TryRemove(Name, Dummy)
     End Sub
 
     Public Function AniIsRun(Name As String) As Boolean
@@ -322,6 +333,12 @@ Public Module ModAnimation
 
     Private AniCount As Integer = 0
 
+    ''' <summary>
+    ''' 启动动画计时器线程。
+    ''' 该线程通过 RunInUiWait 将每帧回调 marshalling 到 UI 线程，
+    ''' 因此 AniTimer 内部对 Entry.Data 的修改始终在 UI 线程上执行。
+    ''' AniStart/AniStop 可从任意线程调用，仅操作 ConcurrentDictionary 层面。
+    ''' </summary>
     Public Sub AniStart()
         AniLastTick = GetTimeMs()
         AniRunning = True
@@ -351,13 +368,26 @@ Public Module ModAnimation
         End Sub, "Animation", ThreadPriority.AboveNormal)
     End Sub
 
+    ''' <summary>
+    ''' 处理一帧动画。
+    ''' 【线程约束】此方法必须且只能在 UI 线程上调用。
+    ''' Entry.Data（List(Of AniData)）的修改只允许在此方法内发生，
+    ''' 不得在其他线程上直接操作 Entry.Data，否则会导致数据竞争。
+    ''' </summary>
     Public Sub AniTimer(DeltaTick As Integer)
         Try
-            Dim i As Integer = -1
-            Do While i + 1 < AniGroups.Count
-                i += 1
-                Dim Entry As AniGroupEntry = AniGroups.Values(i)
-                If Entry.StartTick > AniLastTick Then Continue Do
+            ' 快照字典 key 列表，避免遍历中字典结构变化
+            Dim Snapshot = AniGroups.ToList()
+            Dim KeysToRemove As New List(Of String)
+
+            For Each Kvp In Snapshot
+                Dim Name As String = Kvp.Key
+                Dim Entry As AniGroupEntry = Kvp.Value
+
+                ' Entry.Data 的所有修改（RemoveAt、索引赋值）仅在 UI 线程执行，
+                ' ConcurrentDictionary 保证我们拿到的 Entry 引用是完整的，
+                ' 后续对 Entry.Data 的操作不需要额外同步。
+                If Entry.StartTick > AniLastTick Then Continue For
                 Dim CanRemoveAfter = True
                 Dim ii = 0
 
@@ -371,7 +401,9 @@ Public Module ModAnimation
                             AniCount += 1
                         End If
                         If Anim.TimeFinished >= Anim.TimeTotal Then
-                            If Anim.TypeMain = AniType.Color AndAlso Not Anim.Obj(2) = "" Then Anim.Obj(0).SetResourceReference(Anim.Obj(1), Anim.Obj(2))
+                            If Anim.TypeMain = AniType.Color AndAlso Not Anim.Obj(2) = "" Then
+                                Anim.Obj(0).SetResourceReference(Anim.Obj(1), Anim.Obj(2))
+                            End If
                             Entry.Data.RemoveAt(ii)
                             GoTo NextAni
                         End If
@@ -391,15 +423,16 @@ NextAni:
                 Loop
 
                 If Not Entry.Data.Any() Then
-                    For Current = 0 To AniGroups.Count - 1
-                        If AniGroups.ElementAt(Current).Value.Uuid = Entry.Uuid Then
-                            AniGroups.Remove(AniGroups.ElementAt(Current).Key)
-                            Exit For
-                        End If
-                    Next
-                    i -= 1
+                    KeysToRemove.Add(Name)
                 End If
-            Loop
+            Next
+
+            ' 统一删除已完成的动画组（在快照遍历结束后）
+            For Each Key In KeysToRemove
+                Dim Dummy As AniGroupEntry = Nothing
+                AniGroups.TryRemove(Key, Dummy)
+            Next
+
         Catch ex As Exception
             Log(ex, "Animation tick failed")
         End Try
@@ -496,6 +529,54 @@ NextAni:
         End Try
         Return Ani
     End Function
+
+#End Region
+
+#Region "通用销毁动画"
+
+    ''' <summary>
+    ''' 安全地从父容器中移除指定元素。
+    ''' 兼容 Panel（Children）、ContentControl（Content）、Decorator（Child）等父容器类型。
+    ''' </summary>
+    Public Sub RemoveFromParent(Element As FrameworkElement)
+        If Element.Parent Is Nothing Then Return
+
+        Dim Parent = Element.Parent
+
+        If TypeOf Parent Is Panel Then
+            CType(Parent, Panel).Children.Remove(Element)
+        ElseIf TypeOf Parent Is ContentControl Then
+            CType(Parent, ContentControl).Content = Nothing
+        ElseIf TypeOf Parent Is Decorator Then
+            CType(Parent, Decorator).Child = Nothing
+        Else
+            Try
+                CType(Parent, Object).Children.Remove(Element)
+            Catch
+                Log("RemoveFromParent: 不支持的父容器类型 " & Parent.GetType().Name)
+            End Try
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' 执行"缩放+淡出+缩小高度+回调"的标准销毁动画序列。
+    ''' 收尾逻辑由 CallBack 参数决定，不在此方法内处理父容器移除。
+    ''' </summary>
+    Private Sub AniDisposeCore(Control As FrameworkElement,
+                               Optional CallBack As Action = Nothing,
+                               Optional NamePrefix As String = "Dispose")
+        If Control.IsHitTestVisible Then
+            Control.IsHitTestVisible = False
+            AniStart({
+                AaScaleTransform(Control, -0.08, 200,, New AniEaseInFluent),
+                AaOpacity(Control, -1, 200,, New AniEaseOutFluent),
+                AaHeight(Control, -Control.ActualHeight, 150, 100, New AniEaseOutFluent),
+                AaCode(Sub() If CallBack IsNot Nothing Then CallBack(),, True)
+            }, NamePrefix & " " & Control.GetHashCode())
+        Else
+            If CallBack IsNot Nothing Then CallBack()
+        End If
+    End Sub
 
 #End Region
 

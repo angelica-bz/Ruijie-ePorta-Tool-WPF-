@@ -17,28 +17,184 @@ Public Module ModBase
 
 #End Region
 
-#Region "颜色"
+#Region "颜色（从 XAML 资源缓存）"
 
-    Public ReadOnly Color1 As New MyColor(&HFF, &H34, &H3D, &H4A)
-    Public ReadOnly Color2 As New MyColor(&HFF, &H0B, &H5B, &HCB)
-    Public ReadOnly Color3 As New MyColor(&HFF, &H13, &H70, &HF3)
-    Public ReadOnly Color4 As New MyColor(&HFF, &H48, &H90, &HF5)
-    Public ReadOnly Color5 As New MyColor(&HFF, &H96, &HC0, &HF9)
-    Public ReadOnly Color6 As New MyColor(&HFF, &HD5, &HE6, &HFD)
-    Public ReadOnly Color7 As New MyColor(&HFF, &HE0, &HEA, &HFD)
-    Public ReadOnly Color8 As New MyColor(&HFF, &HEA, &HF2, &HFE)
-    Public ReadOnly ColorBg1 As New MyColor(&H01, &HEA, &HF2, &HFE)
-    Public ReadOnly ColorSemiTransparent As New MyColor(&H01, &HEA, &HF2, &HFE)
-    Public ReadOnly ColorGray1 As New MyColor(&HFF, &H40, &H40, &H40)
-    Public ReadOnly ColorGray2 As New MyColor(&HFF, &H73, &H73, &H73)
-    Public ReadOnly ColorGray3 As New MyColor(&HFF, &H8C, &H8C, &H8C)
-    Public ReadOnly ColorGray4 As New MyColor(&HFF, &HA6, &HA6, &HA6)
-    Public ReadOnly ColorGray5 As New MyColor(&HFF, &HCC, &HCC, &HCC)
-    Public ReadOnly ColorGray6 As New MyColor(&HFF, &HEB, &HEB, &HEB)
-    Public ReadOnly ColorGray7 As New MyColor(&HFF, &HF0, &HF0, &HF0)
-    Public ReadOnly ColorGray8 As New MyColor(&HFF, &HF5, &HF5, &HF5)
-    Public ReadOnly ColorWhite As New MyColor(255, 255, 255, 255)
-    Public ReadOnly ColorBlack As New MyColor(255, 0, 0, 0)
+    Private _ColorsLoaded As Boolean = False
+
+    Private _Color1 As MyColor
+    Private _Color2 As MyColor
+    Private _Color3 As MyColor
+    Private _Color4 As MyColor
+    Private _Color5 As MyColor
+    Private _Color6 As MyColor
+    Private _Color7 As MyColor
+    Private _Color8 As MyColor
+    Private _ColorBg1 As MyColor
+    Private _ColorSemiTransparent As MyColor
+    Private _ColorGray1 As MyColor
+    Private _ColorGray2 As MyColor
+    Private _ColorGray3 As MyColor
+    Private _ColorGray4 As MyColor
+    Private _ColorGray5 As MyColor
+    Private _ColorGray6 As MyColor
+    Private _ColorGray7 As MyColor
+    Private _ColorGray8 As MyColor
+    Private _ColorWhite As MyColor
+    Private _ColorBlack As MyColor
+
+    ''' <summary>
+    ''' 从 XAML 资源加载颜色到本地缓存。必须在 UI 线程上调用。
+    ''' 失败时不置 _ColorsLoaded，下次调用会重试。
+    ''' </summary>
+    Public Sub LoadColorsFromResources()
+        If _ColorsLoaded Then Return
+        Try
+            _Color1 = New MyColor(CType(Application.Current.FindResource("ColorBrush1"), SolidColorBrush))
+            _Color2 = New MyColor(CType(Application.Current.FindResource("ColorBrush2"), SolidColorBrush))
+            _Color3 = New MyColor(CType(Application.Current.FindResource("ColorBrush3"), SolidColorBrush))
+            _Color4 = New MyColor(CType(Application.Current.FindResource("ColorBrush4"), SolidColorBrush))
+            _Color5 = New MyColor(CType(Application.Current.FindResource("ColorBrush5"), SolidColorBrush))
+            _Color6 = New MyColor(CType(Application.Current.FindResource("ColorBrush6"), SolidColorBrush))
+            _Color7 = New MyColor(CType(Application.Current.FindResource("ColorBrush7"), SolidColorBrush))
+            _Color8 = New MyColor(CType(Application.Current.FindResource("ColorBrush8"), SolidColorBrush))
+            _ColorBg1 = New MyColor(CType(Application.Current.FindResource("ColorBrushSemiTransparent"), SolidColorBrush))
+            _ColorSemiTransparent = New MyColor(CType(Application.Current.FindResource("ColorBrushSemiTransparent"), SolidColorBrush))
+            _ColorGray1 = New MyColor(CType(Application.Current.FindResource("ColorBrushGray1"), SolidColorBrush))
+            _ColorGray2 = New MyColor(CType(Application.Current.FindResource("ColorBrushGray2"), SolidColorBrush))
+            _ColorGray3 = New MyColor(CType(Application.Current.FindResource("ColorBrushGray3"), SolidColorBrush))
+            _ColorGray4 = New MyColor(CType(Application.Current.FindResource("ColorBrushGray4"), SolidColorBrush))
+            _ColorGray5 = New MyColor(CType(Application.Current.FindResource("ColorBrushGray5"), SolidColorBrush))
+            _ColorGray6 = New MyColor(CType(Application.Current.FindResource("ColorBrushGray6"), SolidColorBrush))
+            _ColorGray7 = New MyColor(CType(Application.Current.FindResource("ColorBrushGray7"), SolidColorBrush))
+            _ColorGray8 = New MyColor(CType(Application.Current.FindResource("ColorBrushGray8"), SolidColorBrush))
+            _ColorWhite = New MyColor(255, 255, 255, 255)
+            _ColorBlack = New MyColor(255, 0, 0, 0)
+            _ColorsLoaded = True
+        Catch ex As Exception
+            Log(ex, "加载颜色资源失败")
+        End Try
+    End Sub
+
+    Public ReadOnly Property Color1 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _Color1
+        End Get
+    End Property
+    Public ReadOnly Property Color2 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _Color2
+        End Get
+    End Property
+    Public ReadOnly Property Color3 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _Color3
+        End Get
+    End Property
+    Public ReadOnly Property Color4 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _Color4
+        End Get
+    End Property
+    Public ReadOnly Property Color5 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _Color5
+        End Get
+    End Property
+    Public ReadOnly Property Color6 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _Color6
+        End Get
+    End Property
+    Public ReadOnly Property Color7 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _Color7
+        End Get
+    End Property
+    Public ReadOnly Property Color8 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _Color8
+        End Get
+    End Property
+    Public ReadOnly Property ColorBg1 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorBg1
+        End Get
+    End Property
+    Public ReadOnly Property ColorSemiTransparent As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorSemiTransparent
+        End Get
+    End Property
+    Public ReadOnly Property ColorGray1 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorGray1
+        End Get
+    End Property
+    Public ReadOnly Property ColorGray2 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorGray2
+        End Get
+    End Property
+    Public ReadOnly Property ColorGray3 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorGray3
+        End Get
+    End Property
+    Public ReadOnly Property ColorGray4 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorGray4
+        End Get
+    End Property
+    Public ReadOnly Property ColorGray5 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorGray5
+        End Get
+    End Property
+    Public ReadOnly Property ColorGray6 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorGray6
+        End Get
+    End Property
+    Public ReadOnly Property ColorGray7 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorGray7
+        End Get
+    End Property
+    Public ReadOnly Property ColorGray8 As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorGray8
+        End Get
+    End Property
+    Public ReadOnly Property ColorWhite As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorWhite
+        End Get
+    End Property
+    Public ReadOnly Property ColorBlack As MyColor
+        Get
+            If Not _ColorsLoaded Then LoadColorsFromResources()
+            Return _ColorBlack
+        End Get
+    End Property
 
 #End Region
 
@@ -171,9 +327,8 @@ Public Module ModBase
 #Region "工具函数"
 
     Private Uuid As Integer = 1
-    Private UuidLock As Object
+    Private UuidLock As New Object
     Public Function GetUuid() As Integer
-        If UuidLock Is Nothing Then UuidLock = New Object
         SyncLock UuidLock
             Uuid += 1
             Return Uuid
@@ -251,10 +406,18 @@ Public Module ModBase
     Public SharedCfg As Dictionary(Of String, Object)
     Public SharedHeaders As Dictionary(Of String, String)
 
+    ''' <summary>
+    ''' 重载配置文件并刷新所有运行时派生缓存（SharedCfg / SharedHeaders）。
+    ''' 调用方无需关心具体有哪些缓存需要同步。
+    ''' </summary>
+    Public Sub ReloadRuntimeConfig(Optional GuiMode As Boolean = False)
+        SharedCfg = ReadCfg(GuiMode:=GuiMode)
+        SharedHeaders = BuildHeaders(SharedCfg)
+    End Sub
+
     Public Sub InitSharedConfig()
         Try
-            SharedCfg = ReadCfg(GuiMode:=True)
-            SharedHeaders = BuildHeaders(SharedCfg)
+            ReloadRuntimeConfig(GuiMode:=True)
         Catch ex As Exception
             SharedCfg = GetDefaultConfig()
             SharedHeaders = BuildHeaders(SharedCfg)
@@ -273,6 +436,7 @@ Public Module ModBase
             SyncLock LogLock
                 Debug.Write(AppendText)
             End SyncLock
+            DailyWrite(AppendText)
         Catch
         End Try
     End Sub
@@ -283,6 +447,7 @@ Public Module ModBase
             SyncLock LogLock
                 Debug.Write(AppendText)
             End SyncLock
+            DailyWrite(AppendText)
         Catch
         End Try
     End Sub

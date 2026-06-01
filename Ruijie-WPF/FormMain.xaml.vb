@@ -35,6 +35,7 @@ Public Class FormMain
         If _IsUiLoaded Then Return
         _IsUiLoaded = True
         If SharedCfg Is Nothing Then InitSharedConfig()
+        LoadColorsFromResources()
         EnsureMonitor()
         AniStart()
         FraStatus.Content = PageStatus

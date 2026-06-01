@@ -263,31 +263,15 @@ End Class
 
 Partial Public Module ModAnimation
     Public Sub AniDispose(Control As MyCard, RemoveFromChildren As Boolean, Optional CallBack As ParameterizedThreadStart = Nothing)
-        If Control.IsHitTestVisible Then
-            Control.IsHitTestVisible = False
-            AniStart({
-                AaScaleTransform(Control, -0.08, 200,, New AniEaseInFluent),
-                AaOpacity(Control, -1, 200,, New AniEaseOutFluent),
-                AaHeight(Control, -Control.ActualHeight, 150, 100, New AniEaseOutFluent),
-                AaCode(
-                Sub()
-                    If RemoveFromChildren Then
-                        If Control.Parent Is Nothing Then Return
-                        CType(Control.Parent, Object).Children.Remove(Control)
-                    Else
-                        Control.Visibility = Visibility.Collapsed
-                    End If
-                    If CallBack IsNot Nothing Then CallBack(Control)
-                End Sub,, True)
-            }, "MyCard Dispose " & Control.Uuid)
-        Else
-            If RemoveFromChildren Then
-                If Control.Parent Is Nothing Then Return
-                CType(Control.Parent, Object).Children.Remove(Control)
-            Else
-                Control.Visibility = Visibility.Collapsed
-            End If
-            If CallBack IsNot Nothing Then CallBack(Control)
-        End If
+        AniDisposeCore(Control,
+            Sub()
+                If RemoveFromChildren Then
+                    RemoveFromParent(Control)
+                Else
+                    Control.Visibility = Visibility.Collapsed
+                End If
+                If CallBack IsNot Nothing Then CallBack(Control)
+            End Sub,
+            "MyCard Dispose")
     End Sub
 End Module

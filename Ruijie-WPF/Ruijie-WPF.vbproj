@@ -51,6 +51,7 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -87,22 +88,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Controls\MyIconTextButton.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
+
     <Page Include="Controls\MyIconButton.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Controls\MyLoading.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Controls\MyListItem.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
+
+
 
   </ItemGroup>
   <ItemGroup>
@@ -131,18 +123,12 @@
     <Compile Include="Controls\MyHint.xaml.vb">
       <DependentUpon>MyHint.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\MyIconTextButton.xaml.vb">
-      <DependentUpon>MyIconTextButton.xaml</DependentUpon>
-    </Compile>
+
     <Compile Include="Controls\MyIconButton.xaml.vb">
       <DependentUpon>MyIconButton.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\MyLoading.xaml.vb">
-      <DependentUpon>MyLoading.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Controls\MyListItem.xaml.vb">
-      <DependentUpon>MyListItem.xaml</DependentUpon>
-    </Compile>
+
+
 
     <Compile Include="Controls\MyScrollViewer.vb" />
     <Compile Include="Controls\MyScrollBar.vb" />

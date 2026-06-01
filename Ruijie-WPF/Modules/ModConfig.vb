@@ -11,8 +11,6 @@ Public Module ModConfig
         "  version: 3 # 配置文件版本号，请勿更改" & vbCrLf &
         "" & vbCrLf &
         "function:" & vbCrLf &
-        "  check_school_network: true # 是否检查校园网环境" & vbCrLf &
-        "  disconnect_network: true # 是否开启断网功能" & vbCrLf &
         "  auto_reconnect: false # 断网后是否自动重连" & vbCrLf &
         "  reconnect_interval: 5 # 网络检测间隔（秒），同时也是断网重试间隔" & vbCrLf &
         "" & vbCrLf &
@@ -299,8 +297,6 @@ Public Module ModConfig
         Dim Cfg As New Dictionary(Of String, Object)
         Cfg(ConfigKeys.Main) = New Dictionary(Of String, Object) From {{ConfigKeys.Version, CurrentConfigVersion}}
         Cfg(ConfigKeys.FunctionSection) = New Dictionary(Of String, Object) From {
-            {ConfigKeys.CheckSchoolNetwork, True},
-            {ConfigKeys.DisconnectNetwork, True},
             {ConfigKeys.AutoReconnect, False},
             {ConfigKeys.ReconnectInterval, 5}
         }
@@ -357,17 +353,14 @@ Public Module ModConfig
                 Dim Server As String = Url(ConfigKeys.Server).ToString()
                 If Server.EndsWith("/") Then Url(ConfigKeys.Server) = Server.TrimEnd("/"c)
             End If
-            ConvertToStrings(Url)
         End If
 
         Dim LoginData = GetSubDict(Cfg, ConfigKeys.LoginData)
-        If LoginData IsNot Nothing Then ConvertToStrings(LoginData)
+        ' LoginData 保留原始类型，GetDictStr/GetDictBool/GetDictInt 已兼容
 
         If Cfg.ContainsKey(ConfigKeys.LogoutData) Then
             If Cfg(ConfigKeys.LogoutData) Is Nothing Then
                 Cfg(ConfigKeys.LogoutData) = New Dictionary(Of String, Object)
-            ElseIf TypeOf Cfg(ConfigKeys.LogoutData) Is Dictionary(Of String, Object) Then
-                ConvertToStrings(CType(Cfg(ConfigKeys.LogoutData), Dictionary(Of String, Object)))
             End If
         Else
             Cfg(ConfigKeys.LogoutData) = New Dictionary(Of String, Object)
@@ -389,22 +382,6 @@ Public Module ModConfig
         If Not FunctionCfg.ContainsKey(ConfigKeys.ReconnectInterval) Then FunctionCfg(ConfigKeys.ReconnectInterval) = 5
     End Sub
 
-    Private Sub ConvertToStrings(Target As Dictionary(Of String, Object))
-        Dim Keys As New List(Of String)(Target.Keys)
-        For Each Key In Keys
-            Dim V = Target(Key)
-            If V Is Nothing Then
-                Target(Key) = ""
-            ElseIf TypeOf V Is Boolean Then
-                Target(Key) = V.ToString().ToLower()
-            ElseIf TypeOf V Is Integer OrElse TypeOf V Is Double OrElse TypeOf V Is Single Then
-                Target(Key) = V.ToString().ToLower()
-            ElseIf TypeOf V Is Dictionary(Of String, Object) Then
-                ConvertToStrings(CType(V, Dictionary(Of String, Object)))
-            End If
-        Next
-    End Sub
-
 #End Region
 
 #Region "配置访问 Helpers"
@@ -413,8 +390,6 @@ Public Module ModConfig
         Public Const Main As String = "main"
         Public Const Version As String = "version"
         Public Const FunctionSection As String = "function"
-        Public Const CheckSchoolNetwork As String = "check_school_network"
-        Public Const DisconnectNetwork As String = "disconnect_network"
         Public Const AutoReconnect As String = "auto_reconnect"
         Public Const ReconnectInterval As String = "reconnect_interval"
         Public Const Url As String = "url"
