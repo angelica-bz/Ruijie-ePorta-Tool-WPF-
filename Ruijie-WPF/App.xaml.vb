@@ -6,6 +6,7 @@ Class Application
 
     Private Sub Application_Startup(sender As Object, e As StartupEventArgs) Handles Me.Startup
         If e.Args.Contains("--test") Then
+            DailyWriteEnabled = False
             Me.ShutdownMode = ShutdownMode.OnExplicitShutdown
             ModMonitorTests.RunAllTests()
             Me.Shutdown()

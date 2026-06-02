@@ -168,7 +168,11 @@ Public Module ModNetwork
         If Cfg.ContainsKey(Key) AndAlso TypeOf Cfg(Key) Is Dictionary(Of String, Object) Then
             Dim Src = CType(Cfg(Key), Dictionary(Of String, Object))
             For Each Kvp In Src
-                If Kvp.Value IsNot Nothing Then
+                If Kvp.Value Is Nothing Then
+                    Result(Kvp.Key) = ""
+                ElseIf TypeOf Kvp.Value Is Boolean Then
+                    Result(Kvp.Key) = Kvp.Value.ToString().ToLower()
+                Else
                     Result(Kvp.Key) = Kvp.Value.ToString()
                 End If
             Next

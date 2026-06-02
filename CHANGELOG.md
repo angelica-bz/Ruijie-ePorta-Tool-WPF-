@@ -6,7 +6,6 @@
 - 修复 `GetUuid()` 延迟初始化锁对象导致的 TOCTOU 竞态条件
 - 修复配置页保存后未同步刷新 `SharedHeaders`，导致监控线程使用过期请求头的问题
 - 修复 `AniGroups` 字典在多线程间无锁访问可能导致的 `InvalidOperationException` 崩溃
-- 修复 `Log()` 仅输出到 `Debug.Write`，Release 构建中日志不写入文件的问题
 
 ### 变更
 - JSON 解析器：用 `System.Web.Script.Serialization.JavaScriptSerializer` 替换手写递归下降解析器（166 行 → 30 行），支持 Unicode 转义和科学计数法
@@ -17,6 +16,7 @@
 - 动画系统：`AniTimer` 改为快照遍历 + 延迟删除，明确 UI 线程约束；`AniStart`/`AniStop` 使用 `ConcurrentDictionary` 安全操作
 - 动画系统：提取 `AniDisposeCore` + `RemoveFromParent`（兼容 `Panel`/`ContentControl`/`Decorator`），三个控件的 `AniDispose` 改为薄包装
 - 删除未使用的控件：`MyListItem`、`MyLoading`、`MyIconTextButton`（约 700 行死代码）
+- 测试运行时禁用 `DailyWrite`，防止测试消息污染生产日志文件
 
 ### 技术细节
 - `.vbproj` 新增 `System.Web.Extensions` 引用

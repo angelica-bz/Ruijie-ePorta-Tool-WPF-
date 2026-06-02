@@ -436,7 +436,6 @@ Public Module ModBase
             SyncLock LogLock
                 Debug.Write(AppendText)
             End SyncLock
-            DailyWrite(AppendText)
         Catch
         End Try
     End Sub
@@ -447,12 +446,14 @@ Public Module ModBase
             SyncLock LogLock
                 Debug.Write(AppendText)
             End SyncLock
-            DailyWrite(AppendText)
         Catch
         End Try
     End Sub
 
+    Public DailyWriteEnabled As Boolean = True
+
     Public Sub DailyWrite(Msg As String)
+        If Not DailyWriteEnabled Then Return
         Dim Today As String = Date.Now.ToString("yyyy-MM-dd")
         Dim LogsDir As String = GetLogsDir()
         Try
